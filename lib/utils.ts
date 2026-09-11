@@ -25,18 +25,29 @@ export function toLocalDateString(d: Date): string {
   return `${year}-${month}-${day}`
 }
 
+const HTTP_ERRORS: Record<number, string> = {
+  400: 'Requisição inválida',
+  401: 'Sessão expirada. Faça login novamente',
+  403: 'Sem permissão para realizar esta ação',
+  404: 'Registro não encontrado',
+  409: 'Conflito com dados existentes',
+  422: '',
+  500: 'Erro no servidor. Tente novamente',
+}
+
 export function extractApiError(err: unknown): string {
-  if (err && typeof err === 'object') {
-    if ('response' in err) {
-      const res = (err as { response?: { status?: number; data?: { message?: string | string[] } } }).response
-      const msg = res?.data?.message
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { status?: number; data?: { message?: string | string[] } } }).response
+    const status = res?.status
+    const msg = res?.data?.message
+
+    if (status === 422) {
       if (Array.isArray(msg)) return msg[0]
       if (msg) return msg
-      if (res?.status) return `Erro ${res.status}`
     }
-    if ('message' in err) {
-      const msg = (err as { message?: string }).message
-      if (msg) return msg
+
+    if (status && status in HTTP_ERRORS) {
+      return HTTP_ERRORS[status] || 'Erro inesperado'
     }
   }
   return 'Erro inesperado'

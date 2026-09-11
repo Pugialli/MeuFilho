@@ -142,7 +142,7 @@ export function HistoryPage() {
   return (
     <div className="flex flex-col max-w-[680px] mx-auto">
       {/* Tabs */}
-      <div className="flex gap-2 px-4 py-3 bg-surface border-b border-border sticky top-0 z-10">
+      <div className="flex gap-2 px-6 py-3 bg-surface border-b border-border sticky top-0 z-10">
         {TABS.map((tab) => (
           <button
             key={String(tab.value)}
@@ -159,7 +159,7 @@ export function HistoryPage() {
       </div>
 
       {/* Refresh button */}
-      <div className="px-4 pt-3 flex justify-end">
+      <div className="px-6 pt-3 flex justify-end">
         <button
           onClick={() => refetch()}
           disabled={isRefetching}
@@ -177,7 +177,7 @@ export function HistoryPage() {
       )}
 
       {/* List */}
-      <div className="px-4 pb-6 mt-2">
+      <div className="px-6 pb-6 mt-2">
         {grouped.length === 0 ? (
           <div className="flex flex-col items-center pt-16 gap-3">
             <ClipboardList size={48} className="text-muted" />

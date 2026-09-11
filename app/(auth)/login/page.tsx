@@ -61,7 +61,7 @@ export default function LoginPage() {
         <div className="bg-surface rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
           <h2 className="text-[22px] font-semibold text-text mb-5">Entrar</h2>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Email */}
             <div className="mb-4">
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">

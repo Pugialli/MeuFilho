@@ -1,6 +1,6 @@
 {
   "name": "meufilho-web",
-  "version": "2.1.1",
+  "version": "2.1.3",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",

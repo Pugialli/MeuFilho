@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.1.3] - 2026-09-11
+
+### Fixed
+- `useMeasurements.ts`: rota de DELETE corrigida de `/children/:id/measurements/:id` para `/measurements/:id` — a rota aninhada não existe na API, causando 404
+- `lib/utils.ts`: `extractApiError` agora mapeia status HTTP para mensagens amigáveis em português (401, 403, 404, 409, 500) em vez de expor mensagens internas do servidor; validações 422 continuam mostrando o detalhe retornado pela API
+
+---
+
+## [2.1.2] - 2026-09-11
+
+### Fixed
+- `login/page.tsx` e `signup/page.tsx`: `method="post"` adicionado ao `<form>` — impede que o browser envie credenciais como query string na URL em submissões nativas (antes da hidratação React ou via autocomplete do browser)
+- `AppShell.tsx`: layout migrado de `min-h-screen` + nav `fixed` para `h-dvh` + nav como filho do flex — corrige o nav que sumia no iOS Safari (onde `100vh` inclui a barra do browser); `pb-20` removido do `<main>`
+- `AppShell.tsx`: padding do header aumentado de `px-4` para `px-6` — botão "Sair" não aparece mais colado na borda em telas estreitas
+- `HistoryPage.tsx`: padding das tabs, botão "Atualizar" e lista aumentado de `px-4` para `px-6` — alinha com o header
+
+---
+
 ## [2.1.1] - 2026-09-11
 
 ### Fixed

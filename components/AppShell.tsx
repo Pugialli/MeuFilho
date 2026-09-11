@@ -34,9 +34,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!user) return null
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-dvh flex flex-col bg-background">
       {/* Top bar */}
-      <header className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-surface border-b border-border px-6 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center">
             <Baby size={16} className="text-primary" />
@@ -55,10 +55,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+      <main className="flex-1 overflow-y-auto">{children}</main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-border safe-area-inset-bottom z-10">
+      <nav className="shrink-0 bg-surface border-t border-border">
         <div className="flex">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = pathname === href

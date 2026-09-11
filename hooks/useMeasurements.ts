@@ -30,7 +30,7 @@ export function useDeleteMeasurement(childId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (measurementId: string) => {
-      await api.delete(`/children/${childId}/measurements/${measurementId}`)
+      await api.delete(`/measurements/${measurementId}`)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['measurements', childId] }),
   })
