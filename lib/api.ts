@@ -53,14 +53,10 @@ api.interceptors.response.use(
     isRefreshing = true
 
     try {
-      const refreshToken = storage.getRefreshToken()
-      if (!refreshToken) throw new Error('No refresh token')
+      const response = await fetch('/api/auth/refresh-token')
+      if (!response.ok) throw new Error('Refresh failed')
+      const { accessToken: newAccessToken } = await response.json()
 
-      const { data } = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken })
-      const newAccessToken: string = data.data.accessToken
-      const newRefreshToken: string = data.data.refreshToken ?? refreshToken
-
-      storage.saveTokens(newAccessToken, newRefreshToken)
       api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`
       processQueue(null, newAccessToken)
 

@@ -31,7 +31,7 @@ Aplicação web Next.js para o MeuFilho, permitindo que dois responsáveis (pai,
 | Estado e cache | TanStack Query v5 |
 | Formulários | React Hook Form v7 + Zod v3 + @hookform/resolvers |
 | HTTP | Axios (interceptor de refresh token automático) |
-| Armazenamento | localStorage (access token + refresh token + user) |
+| Armazenamento | Cookies (`access_token` regular + `refresh_token` httpOnly) + localStorage (user) |
 | Ícones | lucide-react |
 | Deploy | Vercel |
 | Package manager | pnpm |
@@ -93,11 +93,18 @@ web/
 │   ├── page.tsx                # / (home, protegida)
 │   ├── registrar/page.tsx
 │   ├── historico/page.tsx
-│   └── (auth)/
-│       ├── login/page.tsx
-│       └── signup/page.tsx
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   └── signup/page.tsx
+│   ├── actions/
+│   │   └── auth.ts             # Server actions: getSession, requireAuth, logUserOut
+│   └── api/auth/
+│       ├── set-tokens/route.ts     # POST — persiste tokens em cookies
+│       ├── clear-tokens/route.ts   # POST — invalida refresh token e apaga cookies
+│       └── refresh-token/route.ts  # GET — renova access token server-side
+├── middleware.ts               # Protege rotas; redireciona para /login sem cookie
 ├── components/
-│   ├── AppShell.tsx            # Auth guard + header + bottom nav
+│   ├── AppShell.tsx            # Header + bottom nav
 │   ├── Providers.tsx           # QueryClient + AuthProvider
 │   └── pages/                  # Lógica das páginas
 │       ├── HomePage.tsx
@@ -110,7 +117,7 @@ web/
 │   └── useMeasurements.ts      # useMeasurements, useAddMeasurement, useDeleteMeasurement
 ├── lib/
 │   ├── api.ts                  # Axios + interceptor de refresh token
-│   ├── storage.ts              # localStorage helpers
+│   ├── storage.ts              # Cookie helpers + user em localStorage
 │   └── utils.ts                # formatDate, toLocalDateString, extractApiError
 └── types/
     └── index.ts                # User, Child, Measurement, Role, Sex, MeasurementType
@@ -128,209 +135,4 @@ Este projeto segue o padrão **Semantic Versioning (semver)**: `MAJOR.MINOR.PATC
 
 ---
 
-## Changelog
-
-### v2.0.0 — Migração para Next.js Web
-> Setembro 2026
-
-**Reescrita completa como aplicação web e deploy**
-- Substituição do app React Native / Expo por Next.js 16 com App Router
-- Tailwind CSS v4 com design system via `@theme` (variáveis CSS: primary, background, surface, text, error…)
-- Fonte Inter via `next/font/google`
-
-**Autenticação**
-- `AuthContext` com login, signup e logout usando a mesma API existente
-- Tokens armazenados em `localStorage`; interceptor Axios faz refresh automático em 401
-- Auth guard client-side no `AppShell` — redireciona para `/login` se não autenticado
-
-**Páginas**
-- `/login` e `/signup`: formulários com React Hook Form + Zod, toggle de senha, chips de papel (Pai / Mãe), autocomplete adequado
-- `/` (Home): cards de filhos com edição inline (nome, sexo, data prevista), badge de sexo, lista de responsáveis, modal de convite com Web Share API + fallback de copiar
-- Estado vazio com fluxo de criar perfil ou entrar com código de convite
-- `/registrar`: seletor de tipo (chips Peso / Altura / BPM), campo numérico, date picker nativo, feedback de sucesso inline
-- `/historico`: abas de filtro, medições agrupadas por data (mais recente primeiro), delete com confirmação inline, botão de recarregar
-
-**Infraestrutura**
-- Layout responsivo centralizado (max-width 480px em auth, 680px nas telas do app)
-- Bottom navigation fixo com `AppShell`
-- Deploy na Vercel com detecção automática de Next.js
-- `pnpm-lock.yaml` como lockfile oficial
-
----
-
-### v1.3.0 — Correções de UX web e ajustes visuais
-> Setembro 2026
-
-**Código de convite em modal**
-- Removido do card principal; substituído por botão discreto "Convidar parceiro(a)"
-- Modal centralizado com código em destaque e botão de compartilhar
-
-**Largura máxima responsiva**
-- Auth screens (Login/Signup): conteúdo limitado a 480px e centralizado
-- Telas do app (Bebê, Registrar, Histórico): conteúdo limitado a 560–680px
-
-**Date picker multiplataforma**
-- Componente `DateField` criado em `src/components/DateField.tsx`
-- Web: `TouchableOpacity` chama `el.showPicker()` (ou `el.click()` como fallback) via ref — abre o seletor nativo do browser
-- Native: DateTimePicker com display inline (iOS) e dialog (Android) como antes
-- Usado em HomeScreen (criar/editar bebê) e RecordScreen (data da medição)
-
-**Formulário de edição do bebê**
-- Chips de sexo agora se expandem corretamente (`childCardEdit: { alignItems: stretch }`)
-- Modo de edição usava `alignItems: center` do card pai, que comprimia os chips
-
-**Safe area no Safari (iOS web)**
-- `SafeAreaProvider` adicionado em App.tsx — corrige sobreposição da barra do browser
-
-**Correções de infraestrutura web**
-- `metro.config.js` criado com `unstable_enablePackageExports: true` e `resolveRequest` manual para `@hookform/resolvers/*` (Metro não resolvia subpath exports sem condição `browser`)
-- `react-dom@19.2.3` fixado como dependência direta para evitar conflito com `react@19.2.3` (react-native-web puxava 19.3.0)
-- `pnpm.overrides` adicionado como camada extra de garantia
-
-**Correções de formulários**
-- RecordScreen: `defaultValues: { value: '' }` adicionado ao `useForm` — impede `TextInput` de alternar entre controlled/uncontrolled ao fazer reset após submit
-
-**Console limpo no web**
-- `src/suppressWarnings.ts` criado sem imports e referenciado como primeiro import em `index.ts`
-- Suprime warnings de migração do React Native Web (`shadow*` → `boxShadow`, `pointerEvents` prop → style) que não têm correção viável na fonte (shadow vem dos estilos nativos; pointerEvents vem do React Navigation)
-
----
-
-### v1.2.0 — Múltiplos filhos, edição de perfil e suporte web
-> Setembro 2026
-
-**Múltiplos filhos**
-- Home exibe todos os filhos cadastrados em cards individuais
-- Botão "Adicionar outro bebê" para criar ou entrar com código sem sair da tela
-- `useChildren` já retornava lista; agora a UI renderiza todos os itens
-
-**Edição de perfil do bebê**
-- Botão de lápis em cada card abre edição inline (nome, sexo, data prevista)
-- Novo hook `useUpdateChild` — chama `PATCH /children/:id`
-- Cancelar restaura os valores originais sem chamar a API
-
-**Campo de sexo**
-- Tipo `Sex` adicionado (`MALE` / `FEMALE` / `UNKNOWN`)
-- Componente `SexSelector` — chips Menino / Menina / Não definido
-- Exibido como badge no card de visualização quando definido
-- Incluído no create e no update
-
-**Suporte web**
-- `react-native-web` adicionado; `app.json` configurado com `output: "single-page"`
-- Armazenamento multiplataforma: `expo-secure-store` no nativo, `localStorage` na web
-- `vercel.json` criado com rewrite SPA para deploy na Vercel
-
----
-
-### v1.1.0 — Redesign visual + melhorias de UX
-> Setembro 2026
-
-**Ícones**
-- Todos os emojis substituídos por ícones vetoriais `lucide-react-native` em todas as telas (Baby, Leaf, User, Scale, Ruler, Heart, Calendar, Trash2, ClipboardList, Share2)
-- Instaladas dependências `lucide-react-native` e `react-native-svg`
-
-**Assets**
-- Novos assets criados e configurados: ícone light, dark e tinted (iOS 18+), splash screen, favicon e ícones Android (foreground, background, monochrome)
-- `app.json` atualizado com `ios.icon` como objeto `{ light, dark, tinted }`, splash screen e cor de fundo Android corrigida para `#F7F4EF`
-- `app.json` sincronizado com versão `1.1.0`
-
-**Tela Registrar**
-- Redesenhada com seletor de tipo (Peso / Altura / BPM) — um campo por vez em vez de três campos sempre visíveis
-- Teclado numérico fecha automaticamente via tecla Done (`returnKeyType="done"`)
-- Seletor de data em estilo calendário (`display="inline"` iOS, `display="default"` Android) mostrando dia da semana
-- Botão "Confirmar data" para fechar o calendário inline no iOS
-
-**Correções**
-- `dueDate` agora envia ISO datetime completo — corrige erro de validação `body/dueDate Invalid ISO datetime` da API
-- Histórico: cabeçalho de data corrigido para lidar com ISO datetime completo vindo da API (era `Invalid Date`)
-- Histórico: nome longo do responsável truncado com `ellipsis` — impedia o valor de aparecer no card
-- `DateTimePicker`: `onChange` substituído por `onValueChange` + `onDismiss` (API depreciada)
-- Login: adicionados `textContentType` e `autoComplete` para suporte a autofill iOS
-- Botões: padding via `paddingVertical`/`paddingHorizontal` em vez de `height` fixo
-
----
-
-### v1.0.8 — Fix: instalação do @expo/vector-icons
-> Setembro 2026
-
-- `@expo/vector-icons` adicionado explicitamente às dependências — necessário para os ícones de olho nos campos de senha
-
----
-
-### v1.0.7 — Remoção do @expo/ngrok
-> Setembro 2026
-
-- `@expo/ngrok` removido das devDependencies — não é mais necessário
-
----
-
-### v1.0.6 — Fix: remoção de flags de conexão desnecessárias
-> Setembro 2026
-
-- Scripts `start`, `android` e `ios` voltaram para `expo start` puro — conexão LAN direta funciona sem flags adicionais
-- README simplificado: instrução de uso resume-se a `pnpm start` + QR code
-
----
-
-### v1.0.5 — Fix: substituição do tunnel @expo/ngrok por ngrok v3 manual
-> Setembro 2026
-
-- `@expo/ngrok@4.1.0` descontinuado — usa binário ngrok v2 incompatível com os servidores atuais do ngrok
-- Scripts `start`, `android` e `ios` alterados de `--tunnel` para `--lan`
-- Workflow de desenvolvimento passa a usar ngrok v3 standalone em terminal separado (`ngrok http 8081`)
-- README atualizado com instruções dos dois terminais e entrada manual de URL no Expo Go
-
----
-
-### v1.0.4 — Remoção do .env.example
-> Setembro 2026
-
-- `.env.example` removido — URL de produção é pública e já está documentada no README
-
----
-
-### v1.0.3 — API deployada na Vercel + olho nos campos de senha
-> Setembro 2026
-
-- `EXPO_PUBLIC_API_URL` atualizado para `https://meu-filho-api.vercel.app` — API deixou de ser local
-- `.env.example` atualizado com a URL de produção
-- Adicionado toggle de visibilidade (ícone olho) nos campos de senha do Login e Cadastro
-
----
-
-### v1.0.2 — Fix: tunnel para Expo Go
-> Setembro 2026
-
-- Adicionado `@expo/ngrok@4.1.0` como devDependency — necessário para o modo tunnel funcionar com pnpm (Expo busca o pacote no `node_modules` local, não no global)
-- Scripts `start`, `android` e `ios` atualizados com flag `--tunnel` — contorna o AP Isolation ativo no roteador
-- README atualizado com nota explicativa sobre o uso do tunnel
-
----
-
-### v1.0.1 — Migração para pnpm
-> Setembro 2026
-
-- Migração do package manager de npm para **pnpm@10.30.2**
-- Adicionado campo `packageManager` no `package.json` (Corepack bloqueia `npm install` acidental)
-- Adicionado `pnpm.onlyBuiltDependencies` para aprovar builds nativos sem prompt interativo
-- `package-lock.json` removido e substituído por `pnpm-lock.yaml`
-- `.gitignore` atualizado com `package-lock.json`
-- README atualizado com comandos `pnpm`
-
----
-
-### v1.0.0 — Estrutura inicial do app
-> Setembro 2026
-
-- Setup do projeto com Expo 57, React Native 0.86 e TypeScript
-- Autenticação completa: signup, login, logout e refresh token automático via interceptor Axios
-- Tokens JWT armazenados com segurança no `expo-secure-store`
-- Fluxo de filhos: criar perfil do bebê, gerar código de convite e entrar com código
-- Compartilhamento do código de convite via Share API do React Native
-- Registro de medições independentes (peso, altura, BPM) com seletor de data
-- Validação local com Zod antes de enviar para a API
-- Histórico de medições agrupado por data com filtros por tipo (abas)
-- Pull-to-refresh e exclusão de medições com confirmação
-- Design em tons pastéis verdes (verde sálvia e menta, fundo off-white)
-- Navegação com React Navigation 7: Stack para autenticação e Bottom Tabs para o app
-- Cache e invalidação automática com TanStack Query v5
+> Para o histórico completo de alterações, consulte o [CHANGELOG.md](./CHANGELOG.md).

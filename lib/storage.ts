@@ -1,32 +1,26 @@
 import type { User } from '@/types'
 
-const KEYS = {
-  ACCESS_TOKEN: 'accessToken',
-  REFRESH_TOKEN: 'refreshToken',
-  USER: 'user',
-} as const
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+const USER_KEY = 'user'
 
 export const storage = {
-  saveTokens(accessToken: string, refreshToken: string) {
-    localStorage.setItem(KEYS.ACCESS_TOKEN, accessToken)
-    localStorage.setItem(KEYS.REFRESH_TOKEN, refreshToken)
-  },
   getAccessToken(): string | null {
-    return localStorage.getItem(KEYS.ACCESS_TOKEN)
-  },
-  getRefreshToken(): string | null {
-    return localStorage.getItem(KEYS.REFRESH_TOKEN)
+    return getCookie('access_token')
   },
   saveUser(user: User) {
-    localStorage.setItem(KEYS.USER, JSON.stringify(user))
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
   },
   getUser(): User | null {
-    const raw = localStorage.getItem(KEYS.USER)
+    if (typeof localStorage === 'undefined') return null
+    const raw = localStorage.getItem(USER_KEY)
     return raw ? (JSON.parse(raw) as User) : null
   },
   clear() {
-    localStorage.removeItem(KEYS.ACCESS_TOKEN)
-    localStorage.removeItem(KEYS.REFRESH_TOKEN)
-    localStorage.removeItem(KEYS.USER)
+    localStorage.removeItem(USER_KEY)
   },
 }

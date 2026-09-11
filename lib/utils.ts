@@ -26,9 +26,18 @@ export function toLocalDateString(d: Date): string {
 }
 
 export function extractApiError(err: unknown): string {
-  if (err && typeof err === 'object' && 'response' in err) {
-    const res = (err as { response?: { data?: { message?: string } } }).response
-    return res?.data?.message ?? 'Erro inesperado'
+  if (err && typeof err === 'object') {
+    if ('response' in err) {
+      const res = (err as { response?: { status?: number; data?: { message?: string | string[] } } }).response
+      const msg = res?.data?.message
+      if (Array.isArray(msg)) return msg[0]
+      if (msg) return msg
+      if (res?.status) return `Erro ${res.status}`
+    }
+    if ('message' in err) {
+      const msg = (err as { message?: string }).message
+      if (msg) return msg
+    }
   }
   return 'Erro inesperado'
 }

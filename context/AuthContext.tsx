@@ -11,7 +11,7 @@ interface AuthContextValue {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (payload: { name: string; email: string; password: string; role: Role }) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -21,7 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await fetch('/api/auth/clear-tokens', { method: 'POST' })
+    delete api.defaults.headers.common.Authorization
     storage.clear()
     setUser(null)
     router.replace('/login')
@@ -33,14 +35,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const u = storage.getUser()
-    setUser(u)
+    if (u) {
+      const token = storage.getAccessToken()
+      if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`
+      setUser(u)
+    }
     setLoading(false)
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const { data } = await api.post('/auth/login', { email, password })
     const result = data.data as { accessToken: string; refreshToken: string; user: User }
-    storage.saveTokens(result.accessToken, result.refreshToken)
+
+    await fetch('/api/auth/set-tokens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: result.accessToken, refreshToken: result.refreshToken }),
+    })
+
+    api.defaults.headers.common.Authorization = `Bearer ${result.accessToken}`
     storage.saveUser(result.user)
     setUser(result.user)
   }, [])
@@ -49,7 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (payload: { name: string; email: string; password: string; role: Role }) => {
       const { data } = await api.post('/auth/signup', payload)
       const result = data.data as { accessToken: string; refreshToken: string; user: User }
-      storage.saveTokens(result.accessToken, result.refreshToken)
+
+      await fetch('/api/auth/set-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: result.accessToken, refreshToken: result.refreshToken }),
+      })
+
+      api.defaults.headers.common.Authorization = `Bearer ${result.accessToken}`
       storage.saveUser(result.user)
       setUser(result.user)
     },
