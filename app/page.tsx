@@ -1,0 +1,12 @@
+'use client'
+
+import { AppShell } from '@/components/AppShell'
+import { HomePage } from '@/components/pages/HomePage'
+
+export default function Page() {
+  return (
+    <AppShell>
+      <HomePage />
+    </AppShell>
+  )
+}
